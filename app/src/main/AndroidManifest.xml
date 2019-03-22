@@ -23,7 +23,7 @@
         <receiver android:name=".LocationReceiver"
                   android:exported="true">
             <intent-filter>
-                <action android:name="ACTION_PROCESS_UPDATES"/>
+                <action android:name="@string/location_broadcast_name"/>
             </intent-filter>
         </receiver>
 

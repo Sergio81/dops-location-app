@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Location with Fuse Location</string>
+    <string name="location_broadcast_name">ACTION_PROCESS_UPDATES</string>
 </resources>

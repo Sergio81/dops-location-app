@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -37,6 +38,7 @@ open class MainActivity : AppCompatActivity() {
     }
     private var lastRequestTime = Calendar.getInstance()
     private var message = ""
+    private var brightnessOff = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +46,25 @@ open class MainActivity : AppCompatActivity() {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         createLocationRequest()
+        // Brightness
+        //window.attributes.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF
+
+        //changeBrightness(false)
+
+        fab.setOnClickListener{
+            changeBrightness(brightnessOff)
+            brightnessOff = !brightnessOff
+        }
+    }
+
+    private fun changeBrightness(turnOn: Boolean){
+        val lp = window.attributes
+        if(turnOn)
+            lp.screenBrightness = 1f
+        else
+            lp.screenBrightness = 0f
+
+        window.attributes = lp
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -86,7 +107,8 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun createPendingIntent(): PendingIntent {
-        val intent = Intent("ACTION_PROCESS_UPDATES")
+        val broadcastName = getString(R.string.location_broadcast_name)
+        val intent = Intent(broadcastName)
 
         return PendingIntent.getBroadcast(this, 0, intent, 0)
     }
