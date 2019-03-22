@@ -46,10 +46,6 @@ open class MainActivity : AppCompatActivity() {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         createLocationRequest()
-        // Brightness
-        //window.attributes.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF
-
-        //changeBrightness(false)
 
         fab.setOnClickListener{
             changeBrightness(brightnessOff)
