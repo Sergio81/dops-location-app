@@ -2,13 +2,18 @@ package com.example.dops_location_app
 
 import android.Manifest
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.Gravity
+import android.view.Menu
+import android.view.MenuItem
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -43,6 +48,8 @@ open class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        setSupportActionBar(bottom_app_bar)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         createLocationRequest()
@@ -174,5 +181,27 @@ open class MainActivity : AppCompatActivity() {
         this.message = "$message\n${this.message}"
 
         txtMessage.text = this.message
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val inflater = menuInflater
+        inflater.inflate(R.menu.bottomappbar_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        when (item!!.itemId) {
+            R.id.app_bar_fav -> toast("fab button")
+            R.id.app_bar_search -> toast("search")
+            R.id.app_bar_settings -> toast("settings")
+        }
+        return true
+    }
+
+    // This is an extension method for easy Toast call
+    fun Context.toast(message: CharSequence) {
+        val toast = Toast.makeText(this, message, Toast.LENGTH_SHORT)
+        toast.setGravity(Gravity.BOTTOM, 0, 325)
+        toast.show()
     }
 }
