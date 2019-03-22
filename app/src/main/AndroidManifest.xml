@@ -19,6 +19,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <receiver android:name=".LocationReceiver"
+                  android:exported="true">
+            <intent-filter>
+                <action android:name="ACTION_PROCESS_UPDATES"/>
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

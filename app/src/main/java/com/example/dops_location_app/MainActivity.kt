@@ -1,6 +1,8 @@
 package com.example.dops_location_app
 
 import android.Manifest
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.os.Build
@@ -18,20 +20,22 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.LocationRequest
 import java.lang.Exception
+import java.util.*
 
 open class MainActivity : AppCompatActivity() {
     companion object {
         const val MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
         const val fineLocationPermission = Manifest.permission.ACCESS_FINE_LOCATION
-
     }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val locationRequest = LocationRequest.create()?.apply {
-        interval = 10000
-        fastestInterval = 5000
+        interval = 1000
+        fastestInterval = 1000
+        // smallestDisplacement = 100f // Set the minimum displacement between location updates in meters
         priority = LocationRequest.PRIORITY_HIGH_ACCURACY
     }
+    private var lastRequestTime = Calendar.getInstance()
     private var message = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +69,11 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        fusedLocationClient.removeLocationUpdates(createPendingIntent())
+        super.onDestroy()
+    }
+
     private fun createLocationRequest() {
         val builder = LocationSettingsRequest.Builder()
             .addLocationRequest(locationRequest!!)
@@ -72,41 +81,62 @@ open class MainActivity : AppCompatActivity() {
         val client: SettingsClient = LocationServices.getSettingsClient(this)
         val task: Task<LocationSettingsResponse> = client.checkLocationSettings(builder.build())
 
-        task.addOnSuccessListener { onSuccessListener() }
-
-        task.addOnFailureListener { exception -> onFailureListener(exception) }
+        task.addOnSuccessListener { startLocationUpdates() }
+        task.addOnFailureListener { exception -> onFailureListenerLocationSettings(exception) }
     }
 
-    private fun onSuccessListener() {
+    private fun createPendingIntent(): PendingIntent {
+        val intent = Intent("ACTION_PROCESS_UPDATES")
+
+        return PendingIntent.getBroadcast(this, 0, intent, 0)
+    }
+
+    private fun getDifferenceTime(): String{
+        var difTime = ""
+        val current = Calendar.getInstance()
+
+        val diff = current.time.time - lastRequestTime.time.time
+        val seconds = diff / 1000
+        val minutes = seconds / 60
+        val hours = minutes / 60
+        val days = hours / 24
+
+        if (lastRequestTime.before(current)) {
+            difTime = "Difference: $days:$hours:$minutes:$seconds"
+        }
+
+        lastRequestTime = current
+
+        return difTime
+    }
+
+    private fun startLocationUpdates() {
         // All location settings are satisfied. The client can initialize
         // location requests here.
         // ...
         printMessage("All location settings are satisfied. The client can initialize")
-        if (ContextCompat.checkSelfPermission(
-                this@MainActivity,
-                fineLocationPermission
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
+        if (ContextCompat.checkSelfPermission(this@MainActivity, fineLocationPermission) == PackageManager.PERMISSION_GRANTED) {
             printMessage("Permission $fineLocationPermission is granted")
-            fusedLocationClient.requestLocationUpdates(locationRequest, object : LocationCallback() {
-                override fun onLocationResult(locationResult: LocationResult?) {
-                    for (location in locationResult!!.locations) {
-                        printMessage("[Lat:${location.latitude}][Long:${location.longitude}]")
-                    }
-                }
-            }, null)
+            printMessage("")
+
+            // With a Pending Intent
+            fusedLocationClient.requestLocationUpdates(locationRequest, createPendingIntent())
+
+            // With a Callback
+//            fusedLocationClient.requestLocationUpdates(locationRequest, object : LocationCallback() {
+//                override fun onLocationResult(locationResult: LocationResult?) {
+//                    for (location in locationResult!!.locations)
+//                        printMessage("[Lat:${location.latitude}]\t\t[Long:${location.longitude}]\t\t[${getDifferenceTime()}]")
+//                }
+//            }, null)
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                this@MainActivity.requestPermissions(
-                    arrayOf(fineLocationPermission),
-                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
-                )
-            }
             printMessage("Permission ${Manifest.permission.ACCESS_FINE_LOCATION} is not granted")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                this@MainActivity.requestPermissions(arrayOf(fineLocationPermission), MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
         }
     }
 
-    private fun onFailureListener(exception: Exception) {
+    private fun onFailureListenerLocationSettings(exception: Exception) {
         if (exception is ResolvableApiException) {
             // Location settings are not satisfied, but this can be fixed
             // by showing the user a dialog.
