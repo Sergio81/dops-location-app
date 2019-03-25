@@ -14,7 +14,10 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.dops_location_app.app.Constants
+import com.example.dops_location_app.app.Constants.Companion.MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.Task
@@ -29,18 +32,6 @@ import java.lang.Exception
 import java.util.*
 
 open class MainActivity : AppCompatActivity() {
-    companion object {
-        const val MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
-        const val fineLocationPermission = Manifest.permission.ACCESS_FINE_LOCATION
-    }
-
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private val locationRequest = LocationRequest.create()?.apply {
-        interval = 1000
-        fastestInterval = 1000
-        // smallestDisplacement = 100f // Set the minimum displacement between location updates in meters
-        priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-    }
     private var lastRequestTime = Calendar.getInstance()
     private var message = ""
     private var brightnessOff = false
@@ -51,8 +42,7 @@ open class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(bottom_app_bar)
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        createLocationRequest()
+        //createLocationRequest()
 
         fab.setOnClickListener{
             changeBrightness(brightnessOff)
@@ -93,11 +83,6 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        fusedLocationClient.removeLocationUpdates(createPendingIntent())
-        super.onDestroy()
-    }
-
     private fun createLocationRequest() {
         val builder = LocationSettingsRequest.Builder()
             .addLocationRequest(locationRequest!!)
@@ -109,11 +94,50 @@ open class MainActivity : AppCompatActivity() {
         task.addOnFailureListener { exception -> onFailureListenerLocationSettings(exception) }
     }
 
-    private fun createPendingIntent(): PendingIntent {
-        val broadcastName = getString(R.string.location_broadcast_name)
-        val intent = Intent(broadcastName)
+    private fun startLocationUpdates() {
+        // All location settings are satisfied. The client can initialize
+        // location requests here.
+        // ...
+        //printMessage("All location settings are satisfied. The client can initialize")
+        if (ContextCompat.checkSelfPermission(this@MainActivity, Constants.fineLocationPermission) == PackageManager.PERMISSION_GRANTED) {
+            //printMessage("Permission $fineLocationPermission is granted")
+            //printMessage("")
 
-        return PendingIntent.getBroadcast(this, 0, intent, 0)
+            // With a Pending Intent
+            fusedLocationClient.requestLocationUpdates(locationRequest, createPendingIntent())
+
+            // With a Callback
+//            fusedLocationClient.requestLocationUpdates(locationRequest, object : LocationCallback() {
+//                override fun onLocationResult(locationResult: LocationResult?) {
+//                    for (location in locationResult!!.locations)
+//                        printMessage("[Lat:${location.latitude}]\t\t[Long:${location.longitude}]\t\t[${getDifferenceTime()}]")
+//                }
+//            }, null)
+        } else {
+            //printMessage("Permission ${Manifest.permission.ACCESS_FINE_LOCATION} is not granted")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Constants.fineLocationPermission),
+                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
+                )
+        }
+    }
+
+    private fun onFailureListenerLocationSettings(exception: Exception) {
+        if (exception is ResolvableApiException) {
+            // Location settings are not satisfied, but this can be fixed
+            // by showing the user a dialog.
+            try {
+                // Show the dialog by calling startResolutionForResult(),
+                // and check the result in onActivityResult().
+                exception.startResolutionForResult(this@MainActivity, 2001)
+                //printMessage("Error: ${exception.message}, ${exception.resolution}")
+                //printMessage("Location settings are not satisfied!!!, but this can be fixed")
+            } catch (sendEx: IntentSender.SendIntentException) {
+                // Ignore the error.
+            }
+        }
     }
 
     private fun getDifferenceTime(): String{
@@ -133,48 +157,6 @@ open class MainActivity : AppCompatActivity() {
         lastRequestTime = current
 
         return difTime
-    }
-
-    private fun startLocationUpdates() {
-        // All location settings are satisfied. The client can initialize
-        // location requests here.
-        // ...
-        printMessage("All location settings are satisfied. The client can initialize")
-        if (ContextCompat.checkSelfPermission(this@MainActivity, fineLocationPermission) == PackageManager.PERMISSION_GRANTED) {
-            printMessage("Permission $fineLocationPermission is granted")
-            printMessage("")
-
-            // With a Pending Intent
-            fusedLocationClient.requestLocationUpdates(locationRequest, createPendingIntent())
-
-            // With a Callback
-//            fusedLocationClient.requestLocationUpdates(locationRequest, object : LocationCallback() {
-//                override fun onLocationResult(locationResult: LocationResult?) {
-//                    for (location in locationResult!!.locations)
-//                        printMessage("[Lat:${location.latitude}]\t\t[Long:${location.longitude}]\t\t[${getDifferenceTime()}]")
-//                }
-//            }, null)
-        } else {
-            printMessage("Permission ${Manifest.permission.ACCESS_FINE_LOCATION} is not granted")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                this@MainActivity.requestPermissions(arrayOf(fineLocationPermission), MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
-        }
-    }
-
-    private fun onFailureListenerLocationSettings(exception: Exception) {
-        if (exception is ResolvableApiException) {
-            // Location settings are not satisfied, but this can be fixed
-            // by showing the user a dialog.
-            try {
-                // Show the dialog by calling startResolutionForResult(),
-                // and check the result in onActivityResult().
-                exception.startResolutionForResult(this@MainActivity, 2001)
-                printMessage("Error: ${exception.message}, ${exception.resolution}")
-                printMessage("Location settings are not satisfied!!!, but this can be fixed")
-            } catch (sendEx: IntentSender.SendIntentException) {
-                // Ignore the error.
-            }
-        }
     }
 
     private fun printMessage(message: String) {
@@ -199,7 +181,7 @@ open class MainActivity : AppCompatActivity() {
     }
 
     // This is an extension method for easy Toast call
-    fun Context.toast(message: CharSequence) {
+    private fun Context.toast(message: CharSequence) {
         val toast = Toast.makeText(this, message, Toast.LENGTH_SHORT)
         toast.setGravity(Gravity.BOTTOM, 0, 325)
         toast.show()
