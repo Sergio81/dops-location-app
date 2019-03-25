@@ -2,20 +2,23 @@ package com.example.dops_location_app
 
 import android.Manifest
 import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.content.IntentSender
+import android.content.*
 import android.content.pm.PackageManager
+import android.location.Location
+import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.Gravity
-import android.view.Menu
-import android.view.MenuItem
-import android.view.WindowManager
+import android.os.IBinder
+import android.preference.PreferenceManager
+import android.provider.Settings
+import android.util.Log
+import android.view.*
+import android.widget.Button
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.dops_location_app.app.Constants
 import com.example.dops_location_app.app.Constants.Companion.MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
 import com.google.android.gms.common.api.ResolvableApiException
@@ -28,31 +31,101 @@ import com.google.android.gms.location.LocationSettingsResponse
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.LocationRequest
+import com.google.android.material.snackbar.Snackbar
 import java.lang.Exception
 import java.util.*
 
-open class MainActivity : AppCompatActivity() {
-    private var lastRequestTime = Calendar.getInstance()
+open class MainActivity : AppCompatActivity(), SharedPreferences.OnSharedPreferenceChangeListener {
+    //region Global variables
+    companion object {
+        private const val REQUEST_PERMISSIONS_REQUEST_CODE = 34
+    }
+
+    //private var lastRequestTime = Calendar.getInstance()
     private var message = ""
     private var brightnessOff = false
+
+    private var mBound = false
+    private var myReceiver: MyReceiver? = null
+    private var mService: LocationService? = null
+
+    private val mServiceConnection = object : ServiceConnection {
+
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder = service as LocationService.LocalBinder
+            mService = binder.service
+            mBound = true
+            mService!!.requestLocationUpdates()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            mService = null
+            mBound = false
+        }
+    }
+    //endregion
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        myReceiver = MyReceiver(this::printMessage)
         setSupportActionBar(bottom_app_bar)
 
-        //createLocationRequest()
-
-        fab.setOnClickListener{
+        fab.setOnClickListener {
             changeBrightness(brightnessOff)
             brightnessOff = !brightnessOff
         }
+
+        // Check that the user hasn't revoked permissions by going to Settings.
+        if (LocationService.requestingLocationUpdates(this)) {
+            if (!checkPermissions()) {
+                requestPermissions()
+            }
+        }
     }
 
-    private fun changeBrightness(turnOn: Boolean){
+    override fun onStart() {
+        super.onStart()
+        PreferenceManager.getDefaultSharedPreferences(this)
+            .registerOnSharedPreferenceChangeListener(this)
+
+        if (!checkPermissions()) {
+            requestPermissions()
+        }
+
+        bindService(
+            Intent(this, LocationService::class.java), mServiceConnection,
+            Context.BIND_AUTO_CREATE
+        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            myReceiver!!,
+            IntentFilter(LocationService.ACTION_BROADCAST)
+        )
+    }
+
+    override fun onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver!!)
+        super.onPause()
+    }
+
+    override fun onStop() {
+        if (mBound) {
+            unbindService(mServiceConnection)
+            mBound = false
+        }
+        PreferenceManager.getDefaultSharedPreferences(this)
+            .unregisterOnSharedPreferenceChangeListener(this)
+        super.onStop()
+    }
+
+    private fun changeBrightness(turnOn: Boolean) {
         val lp = window.attributes
-        if(turnOn)
+        if (turnOn)
             lp.screenBrightness = 1f
         else
             lp.screenBrightness = 0f
@@ -61,108 +134,37 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        when (requestCode) {
-            MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION -> {
-                // If request is cancelled, the result arrays are empty.
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
-                    createLocationRequest()
-                } else {
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                    finishAffinity()
+        if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
+            when {
+                grantResults.isEmpty() -> // If user interaction was interrupted, the permission request is cancelled and you
+                    // receive empty arrays.
+                    Log.i("myTag", "User interaction was cancelled.")
+                grantResults[0] == PackageManager.PERMISSION_GRANTED -> // Permission was granted.
+                    mService!!.requestLocationUpdates()
+                else -> {
+                    // Permission denied.
+                    //setButtonsState(false)
+                    Snackbar.make(
+                        findViewById(R.id.coordinatorLayout),
+                        "Permission was denied, but is needed for core functionality",
+                        Snackbar.LENGTH_INDEFINITE
+                    )
+                        .setAction(R.string.settings, View.OnClickListener {
+                            // Build intent that displays the App settings screen.
+                            val intent = Intent()
+                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                            val uri = Uri.fromParts(
+                                "package",
+                                BuildConfig.APPLICATION_ID, null
+                            )
+                            intent.data = uri
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            startActivity(intent)
+                        })
+                        .show()
                 }
-                return
-            }
-            // Add other 'when' lines to check for other
-            // permissions this app might request.
-            else -> {
-                // Ignore all other requests.
             }
         }
-    }
-
-    private fun createLocationRequest() {
-        val builder = LocationSettingsRequest.Builder()
-            .addLocationRequest(locationRequest!!)
-
-        val client: SettingsClient = LocationServices.getSettingsClient(this)
-        val task: Task<LocationSettingsResponse> = client.checkLocationSettings(builder.build())
-
-        task.addOnSuccessListener { startLocationUpdates() }
-        task.addOnFailureListener { exception -> onFailureListenerLocationSettings(exception) }
-    }
-
-    private fun startLocationUpdates() {
-        // All location settings are satisfied. The client can initialize
-        // location requests here.
-        // ...
-        //printMessage("All location settings are satisfied. The client can initialize")
-        if (ContextCompat.checkSelfPermission(this@MainActivity, Constants.fineLocationPermission) == PackageManager.PERMISSION_GRANTED) {
-            //printMessage("Permission $fineLocationPermission is granted")
-            //printMessage("")
-
-            // With a Pending Intent
-            fusedLocationClient.requestLocationUpdates(locationRequest, createPendingIntent())
-
-            // With a Callback
-//            fusedLocationClient.requestLocationUpdates(locationRequest, object : LocationCallback() {
-//                override fun onLocationResult(locationResult: LocationResult?) {
-//                    for (location in locationResult!!.locations)
-//                        printMessage("[Lat:${location.latitude}]\t\t[Long:${location.longitude}]\t\t[${getDifferenceTime()}]")
-//                }
-//            }, null)
-        } else {
-            //printMessage("Permission ${Manifest.permission.ACCESS_FINE_LOCATION} is not granted")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Constants.fineLocationPermission),
-                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
-                )
-        }
-    }
-
-    private fun onFailureListenerLocationSettings(exception: Exception) {
-        if (exception is ResolvableApiException) {
-            // Location settings are not satisfied, but this can be fixed
-            // by showing the user a dialog.
-            try {
-                // Show the dialog by calling startResolutionForResult(),
-                // and check the result in onActivityResult().
-                exception.startResolutionForResult(this@MainActivity, 2001)
-                //printMessage("Error: ${exception.message}, ${exception.resolution}")
-                //printMessage("Location settings are not satisfied!!!, but this can be fixed")
-            } catch (sendEx: IntentSender.SendIntentException) {
-                // Ignore the error.
-            }
-        }
-    }
-
-    private fun getDifferenceTime(): String{
-        var difTime = ""
-        val current = Calendar.getInstance()
-
-        val diff = current.time.time - lastRequestTime.time.time
-        val seconds = diff / 1000
-        val minutes = seconds / 60
-        val hours = minutes / 60
-        val days = hours / 24
-
-        if (lastRequestTime.before(current)) {
-            difTime = "Difference: $days:$hours:$minutes:$seconds"
-        }
-
-        lastRequestTime = current
-
-        return difTime
-    }
-
-    private fun printMessage(message: String) {
-        this.message = "$message\n${this.message}"
-
-        txtMessage.text = this.message
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -180,10 +182,73 @@ open class MainActivity : AppCompatActivity() {
         return true
     }
 
+    private fun printMessage(message: String) {
+        this.message = "$message\n${this.message}"
+
+        txtLastLocation.text = message
+        txtMessage.text = this.message
+    }
+
     // This is an extension method for easy Toast call
     private fun Context.toast(message: CharSequence) {
         val toast = Toast.makeText(this, message, Toast.LENGTH_SHORT)
         toast.setGravity(Gravity.BOTTOM, 0, 325)
         toast.show()
+    }
+
+    private fun checkPermissions(): Boolean {
+        return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+    }
+
+    private fun requestPermissions() {
+        val shouldProvideRationale = ActivityCompat.shouldShowRequestPermissionRationale(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+
+        // Provide an additional rationale to the user. This would happen if the user denied the
+        // request previously, but didn't check the "Don't ask again" checkbox.
+        if (shouldProvideRationale) {
+            //Log.i(TAG, "Displaying permission rationale to provide additional context.")
+            Snackbar.make(
+                findViewById(R.id.coordinatorLayout),
+                "Location permission rationale to provide additional content",
+                Snackbar.LENGTH_INDEFINITE
+            )
+                .setAction("Ok") {
+                    // Request permission
+                    ActivityCompat.requestPermissions(
+                        this@MainActivity,
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                        REQUEST_PERMISSIONS_REQUEST_CODE
+                    )
+                }
+                .show()
+        } else {
+            //Log.i(TAG, "Requesting permission")
+            // Request permission. It's possible this can be auto answered if device policy
+            // sets the permission in a given state or the user denied the permission
+            // previously and checked "Never ask again".
+            ActivityCompat.requestPermissions(
+                this@MainActivity,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                REQUEST_PERMISSIONS_REQUEST_CODE
+            )
+        }
+    }
+
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+
+    }
+
+    class MyReceiver(private val sendMessage:(m:String)-> Unit) : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val location: Location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION)
+
+            sendMessage("[${location.latitude}][${location.longitude}]")
+        }
     }
 }

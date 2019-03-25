@@ -15,17 +15,24 @@ import android.preference.PreferenceManager
 import android.util.Log
 
 class LocationService : Service() {
+    //region Global variables
     companion object {
         private const val PACKAGE_NAME = "com.example.dops_location_app"
 
-        private const val EXTRA_LOCATION = "$PACKAGE_NAME.location"
-        private const val ACTION_BROADCAST = "$PACKAGE_NAME.broadcast"
+        const val EXTRA_LOCATION = "$PACKAGE_NAME.location"
+        const val ACTION_BROADCAST = "$PACKAGE_NAME.broadcast"
         const val KEY_REQUESTING_LOCATION_UPDATES = "requesting_locaction_updates"
+
         private const val EXTRA_STARTED_FROM_NOTIFICATION = "$PACKAGE_NAME.started_from_notification"
 
-        private val TAG = LocationService::class.java!!.simpleName
+        private val TAG = LocationService::class.java.simpleName
         private const val NOTIFICATION_ID = 12345678
         private const val CHANNEL_ID = "channel_01"
+
+        fun requestingLocationUpdates(context: Context): Boolean {
+            return PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(KEY_REQUESTING_LOCATION_UPDATES, false)
+        }
     }
 
     private val mBinder = LocalBinder()
@@ -42,6 +49,7 @@ class LocationService : Service() {
     }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    //endregion
 
     //region Overrides
     override fun onCreate() {
@@ -74,7 +82,7 @@ class LocationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val startedFromNotification = intent.getBooleanExtra(
+        val startedFromNotification = intent!!.getBooleanExtra(
             EXTRA_STARTED_FROM_NOTIFICATION,
             false
         )
@@ -218,11 +226,13 @@ class LocationService : Service() {
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mNotificationManager!!.createNotificationChannel(NotificationChannel(
-                CHANNEL_ID,
-                "MyChanelName",
-                NotificationManager.IMPORTANCE_HIGH
-            ))
+            mNotificationManager!!.createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_ID,
+                    "MyChanelName",
+                    NotificationManager.IMPORTANCE_HIGH
+                )
+            )
         }
 
         val builder = NotificationCompat.Builder(this, "default")
@@ -258,10 +268,6 @@ class LocationService : Service() {
             "(" + location.latitude + ", " + location.longitude + ")"
     }
 
-    private fun requestingLocationUpdates(context: Context): Boolean {
-        return PreferenceManager.getDefaultSharedPreferences(context)
-            .getBoolean(KEY_REQUESTING_LOCATION_UPDATES, false)
-    }
 
     private fun setRequestingLocationUpdates(context: Context, requestingLocationUpdates: Boolean) {
         PreferenceManager.getDefaultSharedPreferences(context)
