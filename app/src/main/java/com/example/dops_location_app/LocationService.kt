@@ -236,27 +236,14 @@ class LocationService : Service() {
         }
 
         val builder = NotificationCompat.Builder(this, "default")
-            .addAction(
-                R.drawable.baseline_search_white_24, "Title: ",
-                activityPendingIntent
-            )
-            .addAction(
-                R.drawable.baseline_favorite_white_24, "Title: ",
-                servicePendingIntent
-            )
+            .setSmallIcon(R.drawable.baseline_favorite_white_24)
             .setContentText(text)
-            .setContentTitle("Content Title")
+            .setContentTitle("Last position")
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setTicker(text)
             .setWhen(System.currentTimeMillis())
-
-
-        // Set the Channel ID for Android O.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setChannelId(CHANNEL_ID) // Channel ID
-        }
 
         return builder.build()
     }
