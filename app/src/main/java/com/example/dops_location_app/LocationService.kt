@@ -158,7 +158,6 @@ class LocationService : Service() {
         } catch (unlikely: SecurityException) {
             Log.e(TAG, "Lost location permission.$unlikely")
         }
-
     }
 
     private fun removeLocationUpdates() {
@@ -171,7 +170,6 @@ class LocationService : Service() {
             setRequestingLocationUpdates(this, true)
             Log.e(TAG, "Lost location permission. Could not remove updates. $unlikely")
         }
-
     }
 
     private fun onNewLocation(location: Location) {
@@ -191,9 +189,8 @@ class LocationService : Service() {
     }
 
     private fun serviceIsRunningInForeground(context: Context): Boolean {
-        val manager = context.getSystemService(
-            Context.ACTIVITY_SERVICE
-        ) as ActivityManager
+        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+
         for (service in manager.getRunningServices(Integer.MAX_VALUE)) {
             if (javaClass.name == service.service.className) {
                 if (service.foreground) {
@@ -254,7 +251,6 @@ class LocationService : Service() {
         else
             "(" + location.latitude + ", " + location.longitude + ")"
     }
-
 
     private fun setRequestingLocationUpdates(context: Context, requestingLocationUpdates: Boolean) {
         PreferenceManager.getDefaultSharedPreferences(context)

@@ -15,6 +15,7 @@ import android.provider.Settings
 import android.util.Log
 import android.view.*
 import android.widget.Button
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -48,6 +49,10 @@ open class MainActivity : AppCompatActivity(), SharedPreferences.OnSharedPrefere
     private var mBound = false
     private var myReceiver: MyReceiver? = null
     private var mService: LocationService? = null
+
+    private var minBrightness = 0f
+    private var maxBrightness = 100f
+    private var currentBrightness = 50f
 
     private val mServiceConnection = object : ServiceConnection {
 
@@ -83,6 +88,44 @@ open class MainActivity : AppCompatActivity(), SharedPreferences.OnSharedPrefere
                 requestPermissions()
             }
         }
+
+        setSeekBars()
+    }
+
+    private fun setSeekBars() {
+        minSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                txtMinValue.text = "$progress%"
+                minBrightness = progress.toFloat()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        maxSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                txtMaxValue.text = "$progress%"
+                maxBrightness = progress.toFloat()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        currentSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                txtCurrentValue.text = "$progress%"
+                currentBrightness = progress.toFloat()
+                changeBrightness(currentBrightness)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
     }
 
     override fun onStart() {
@@ -126,11 +169,22 @@ open class MainActivity : AppCompatActivity(), SharedPreferences.OnSharedPrefere
     private fun changeBrightness(turnOn: Boolean) {
         val lp = window.attributes
         if (turnOn)
-            lp.screenBrightness = 1f
+            lp.screenBrightness = maxBrightness/100
         else
-            lp.screenBrightness = 0f
+            lp.screenBrightness = minBrightness/100
 
         window.attributes = lp
+        currentBrightness = lp.screenBrightness * 100
+        txtCurrentValue.text = "${currentBrightness.toInt()}%"
+        currentSeekBar.progress = currentBrightness.toInt()
+    }
+
+    private fun changeBrightness(value: Float) {
+        val lp = window.attributes
+            lp.screenBrightness = value/100
+
+        window.attributes = lp
+        currentBrightness = value
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

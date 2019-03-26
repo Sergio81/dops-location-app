@@ -10,28 +10,24 @@
     <androidx.coordinatorlayout.widget.CoordinatorLayout
             android:id="@+id/coordinatorLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_marginBottom="56dp"
                 android:layout_width="match_parent"
-                android:layout_height="355dp">
-            <androidx.constraintlayout.widget.Guideline
-                    android:orientation="vertical"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/guideline" app:layout_constraintGuide_percent="0.5"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"/>
+                android:layout_height="match_parent">
+
             <androidx.cardview.widget.CardView
                     android:layout_width="0dp"
-                    android:layout_height="98dp"
+                    android:layout_height="wrap_content"
                     app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toStartOf="@+id/guideline"
                     android:layout_marginEnd="8dp" android:layout_marginTop="8dp"
                     app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="8dp"
                     app:cardUseCompatPadding="true"
                     app:cardElevation="4dp"
-                    app:cardCornerRadius="3dp">
+                    app:cardCornerRadius="3dp" android:id="@+id/cardView">
                 <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
@@ -48,6 +44,126 @@
                             android:layout_marginBottom="8dp"/>
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:cardUseCompatPadding="true"
+                    app:cardElevation="4dp"
+                    app:cardCornerRadius="3dp"
+                    android:layout_marginBottom="8dp" app:layout_constraintBottom_toBottomOf="parent"
+                    android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/cardView"
+                    android:layout_marginEnd="8dp" app:layout_constraintEnd_toStartOf="@+id/guideline"
+                    android:layout_marginStart="8dp" app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintVertical_bias="0.0" app:contentPadding="5dp">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                    <TextView
+                            android:text="Display brightness"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent" android:layout_marginTop="8dp"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/roboto"
+                            android:textStyle="bold" android:textSize="24sp" android:layout_marginEnd="8dp"
+                            android:layout_marginBottom="8dp" app:layout_constraintHorizontal_bias="0.0"
+                            app:layout_constraintVertical_bias="0.0" android:id="@+id/textView"/>
+
+                    <TextView
+                            android:text="min"
+                            android:layout_width="59dp"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/textView2"
+                            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/textView"
+                            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+                            android:fontFamily="@font/roboto"/>
+                    <SeekBar
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/minSeekBar"
+                            android:layout_marginTop="8dp"
+                            app:layout_constraintTop_toBottomOf="@+id/textView"
+                            app:layout_constraintStart_toEndOf="@+id/textView2" android:layout_marginStart="8dp"
+                            android:max="100" android:progress="0" android:layout_marginEnd="8dp"
+                            app:layout_constraintEnd_toStartOf="@+id/txtMinValue"/>
+                    <TextView
+                            android:text="0%"
+                            android:layout_width="46dp"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/txtMinValue"
+                            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/textView"
+                            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"/>
+
+                    <TextView
+                            android:text="max"
+                            android:layout_width="59dp"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/textView3"
+                            android:fontFamily="@font/roboto" app:layout_constraintStart_toStartOf="parent"
+                            android:layout_marginStart="8dp" android:layout_marginTop="8dp"
+                            app:layout_constraintTop_toBottomOf="@+id/minSeekBar"/>
+                    <SeekBar
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/maxSeekBar"
+
+                            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/minSeekBar"
+                            app:layout_constraintStart_toEndOf="@+id/textView3" android:layout_marginStart="8dp"
+                            android:max="100"
+                            android:progress="100" android:layout_marginEnd="8dp"
+                            app:layout_constraintEnd_toStartOf="@+id/txtMaxValue"/>
+                    <TextView
+                            android:text="100%"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/txtMaxValue"
+                            app:layout_constraintTop_toBottomOf="@+id/minSeekBar"
+                            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+                            android:layout_marginTop="8dp" android:layout_width="46dp"/>
+
+                    <TextView
+                            android:text="current"
+                            android:layout_width="59dp"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/txtCurrent"
+                            android:fontFamily="@font/roboto" app:layout_constraintStart_toStartOf="parent"
+                            android:layout_marginStart="8dp" android:layout_marginTop="8dp"
+                            app:layout_constraintTop_toBottomOf="@+id/maxSeekBar" android:layout_marginBottom="8dp"
+                            app:layout_constraintBottom_toBottomOf="parent" android:textSize="18sp"/>
+                    <SeekBar
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/currentSeekBar"
+                            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/maxSeekBar"
+                            android:max="100"
+                            android:progress="100"
+                            app:layout_constraintStart_toEndOf="@+id/txtCurrent" android:layout_marginStart="8dp"
+                            android:layout_marginEnd="8dp" app:layout_constraintEnd_toStartOf="@+id/txtCurrentValue"
+                            android:layout_marginBottom="8dp" app:layout_constraintBottom_toBottomOf="parent"/>
+                    <TextView
+                            android:text="100%"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/txtCurrentValue"
+                            app:layout_constraintTop_toBottomOf="@+id/maxSeekBar"
+                            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+                            android:layout_marginTop="8dp" android:layout_width="46dp" android:layout_marginBottom="8dp"
+                            app:layout_constraintBottom_toBottomOf="parent" android:textSize="18sp"/>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.constraintlayout.widget.Guideline
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/guideline" app:layout_constraintGuide_percent="0.5"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
             <ScrollView
                     android:layout_width="0dp"
                     android:layout_height="0dp"
@@ -67,6 +183,7 @@
                             android:textAlignment="viewStart"/>
                 </LinearLayout>
             </ScrollView>
+
         </androidx.constraintlayout.widget.ConstraintLayout>
         <com.google.android.material.bottomappbar.BottomAppBar
                 android:id="@+id/bottom_app_bar"
@@ -85,7 +202,7 @@
                 android:backgroundTint="@color/colorAccent"
                 android:foregroundTint="@color/colorAccent"
                 app:borderWidth="0dp"
-                app:layout_anchor="@id/bottom_app_bar" />
+                app:layout_anchor="@id/bottom_app_bar"/>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
