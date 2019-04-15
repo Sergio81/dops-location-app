@@ -23,6 +23,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.dops_location_app.app.Constants
 import com.example.dops_location_app.app.Constants.Companion.MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
+import com.example.dops_location_app.location.LocationService
 import com.example.dops_location_app.model.LocationResponse
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -44,11 +45,12 @@ open class MainActivity : AppCompatActivity(){
         private const val REQUEST_PERMISSIONS_REQUEST_CODE = 34
     }
 
-    //private var lastRequestTime = Calendar.getInstance()
     private var brightnessOff = false
     private var minBrightness = 0f
     private var maxBrightness = 100f
     private var currentBrightness = 50f
+
+    private lateinit var locationService: LocationService
     //endregion
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,17 +63,27 @@ open class MainActivity : AppCompatActivity(){
             changeBrightness(brightnessOff)
             brightnessOff = !brightnessOff
         }
-
-        // Check that the user hasn't revoked permissions by going to Settings.
-        //if (LocationService.requestingLocationUpdates(this)) {
-            if (!checkPermissions()) {
-                requestPermissions()
-            }
-        //}
-
         setSeekBars()
     }
 
+    override fun onStart() {
+        super.onStart()
+
+        if (!checkPermissions()) {
+            requestPermissions()
+        }
+
+        val mAdapter= LocationAdapter()
+        mRecyclerView.adapter = mAdapter
+        mRecyclerView.layoutManager = LinearLayoutManager(this)
+
+        locationService = LocationService(this)
+        locationService.lastLocation.observe(this, androidx.lifecycle.Observer {
+            mAdapter.newItem(it)
+        })
+    }
+
+    //region UI
     private fun setSeekBars() {
         minSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -108,85 +120,6 @@ open class MainActivity : AppCompatActivity(){
         })
     }
 
-    override fun onStart() {
-        super.onStart()
-
-        if (!checkPermissions()) {
-            requestPermissions()
-        }
-
-        mRecyclerView.adapter = LocationAdapter().apply { updateItems(createSampleData()) }
-        mRecyclerView.layoutManager = LinearLayoutManager(this)
-    }
-
-    private fun createSampleData() : ArrayList<LocationResponse>{
-        val items = ArrayList<LocationResponse>()
-
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-
-        return items
-    }
-
-    //region UI
     private fun changeBrightness(turnOn: Boolean) {
         val lp = window.attributes
         if (turnOn)
@@ -268,16 +201,13 @@ open class MainActivity : AppCompatActivity(){
 
     //region Permissions
     private fun checkPermissions(): Boolean {
-        return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        )
+        return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
     }
 
     private fun requestPermissions() {
         val shouldProvideRationale = ActivityCompat.shouldShowRequestPermissionRationale(
             this,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            Manifest.permission.ACCESS_COARSE_LOCATION
         )
 
         // Provide an additional rationale to the user. This would happen if the user denied the
@@ -293,7 +223,7 @@ open class MainActivity : AppCompatActivity(){
                     // Request permission
                     ActivityCompat.requestPermissions(
                         this@MainActivity,
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                        arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
                         REQUEST_PERMISSIONS_REQUEST_CODE
                     )
                 }
@@ -305,7 +235,7 @@ open class MainActivity : AppCompatActivity(){
             // previously and checked "Never ask again".
             ActivityCompat.requestPermissions(
                 this@MainActivity,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
                 REQUEST_PERMISSIONS_REQUEST_CODE
             )
         }
