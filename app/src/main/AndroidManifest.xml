@@ -24,18 +24,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
-        <receiver android:name=".LocationReceiver"
-                  android:exported="true">
-            <intent-filter>
-                <action android:name="@string/location_broadcast_name"/>
-            </intent-filter>
-        </receiver>
-
-        <service
-                android:name=".LocationService"
-                android:enabled="true"
-                android:exported="true"/>
         <meta-data android:name="preloaded_fonts" android:resource="@array/preloaded_fonts"/>
     </application>
 
