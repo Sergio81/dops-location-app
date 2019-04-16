@@ -16,6 +16,7 @@
             android:supportsRtl="true"
             android:theme="@style/AppTheme"
             tools:ignore="GoogleAppIndexingWarning">
+
         <activity android:name=".MainActivity"
                 android:launchMode="singleTask">
             <intent-filter>
@@ -24,7 +25,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <meta-data android:name="preloaded_fonts" android:resource="@array/preloaded_fonts"/>
-    </application>
 
+        <meta-data android:name="preloaded_fonts" android:resource="@array/preloaded_fonts"/>
+
+        <service android:name=".service.LocationService"
+                 android:enabled="true"
+                 android:exported="true" />
+    </application>
 </manifest>

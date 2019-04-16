@@ -29,6 +29,11 @@ class LocationAdapter() : RecyclerView.Adapter<LocationAdapter.ViewHolder>() {
         notifyDataSetChanged()
     }
 
+    fun addItem(item:LocationResponse){
+        items.add(0, item)
+        notifyDataSetChanged()
+    }
+
     class ViewHolder(view : View) : RecyclerView.ViewHolder(view) {
         private val txtLatitude = view.findViewById<TextView>(R.id.txtLatitude)
         private val txtLongitude = view.findViewById<TextView>(R.id.txtLongitude)

@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.dops_location_app.app.Constants
 import com.example.dops_location_app.app.Constants.Companion.MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
 import com.example.dops_location_app.model.LocationResponse
+import com.example.dops_location_app.service.LocationService
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.Task
@@ -49,6 +50,27 @@ open class MainActivity : AppCompatActivity(){
     private var minBrightness = 0f
     private var maxBrightness = 100f
     private var currentBrightness = 50f
+
+    private val locationAdapter = LocationAdapter()
+
+    //region Service variables
+    private var myReceiver: MyReceiver? = null
+    private var mService: LocationService? = null
+    private var mBound = false
+    private val mServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder = service as LocationService.LocalBinder
+            mService = binder.service
+            mBound = true
+            mService!!.requestLocationUpdates()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            mService = null
+            mBound = false
+        }
+    }
+    //endregion
     //endregion
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,17 +79,19 @@ open class MainActivity : AppCompatActivity(){
 
         setSupportActionBar(bottom_app_bar)
 
+        myReceiver = MyReceiver(this::printMessage)
+
         fab.setOnClickListener {
             changeBrightness(brightnessOff)
             brightnessOff = !brightnessOff
         }
 
         // Check that the user hasn't revoked permissions by going to Settings.
-        //if (LocationService.requestingLocationUpdates(this)) {
+        if (LocationService.requestingLocationUpdates(this)) {
             if (!checkPermissions()) {
                 requestPermissions()
             }
-        //}
+        }
 
         setSeekBars()
     }
@@ -115,75 +139,34 @@ open class MainActivity : AppCompatActivity(){
             requestPermissions()
         }
 
-        mRecyclerView.adapter = LocationAdapter().apply { updateItems(createSampleData()) }
+        mRecyclerView.adapter = locationAdapter
         mRecyclerView.layoutManager = LinearLayoutManager(this)
+
+        bindService(
+            Intent(this, LocationService::class.java), mServiceConnection,
+            Context.BIND_AUTO_CREATE
+        )
     }
 
-    private fun createSampleData() : ArrayList<LocationResponse>{
-        val items = ArrayList<LocationResponse>()
+    override fun onResume() {
+        super.onResume()
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+            myReceiver!!,
+            IntentFilter(LocationService.ACTION_BROADCAST)
+        )
+    }
 
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 5))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
-        items.add(LocationResponse(1231.34534f, 123.45f, 6))
-        items.add(LocationResponse(1231.34534f, 123.45f, 4))
-        items.add(LocationResponse(1231.34534f, 123.45f, 8))
-        items.add(LocationResponse(1231.34534f, 123.45f, 7))
+    override fun onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver!!)
+        super.onPause()
+    }
 
-        return items
+    override fun onStop() {
+        if (mBound) {
+            unbindService(mServiceConnection)
+            mBound = false
+        }
+        super.onStop()
     }
 
     //region UI
@@ -312,4 +295,24 @@ open class MainActivity : AppCompatActivity(){
     }
     //endregion
 
+    private fun printMessage(message: LocationResponse) {
+        locationAdapter.addItem(message)
+    }
+
+    class MyReceiver(private val sendMessage:(m:LocationResponse)-> Unit) : BroadcastReceiver() {
+        companion object{
+            private var tStart = System.currentTimeMillis()
+        }
+
+        override fun onReceive(context: Context, intent: Intent) {
+            val location: Location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION)
+
+            val tEnd = System.currentTimeMillis()
+            val tDelta = tEnd - tStart
+            val elapsedSeconds = tDelta / 1000.0
+
+            sendMessage(LocationResponse(location.latitude.toFloat(), location.longitude.toFloat(), elapsedSeconds))
+            tStart = System.currentTimeMillis()
+        }
+    }
 }
