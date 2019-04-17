@@ -13,8 +13,10 @@ import android.content.res.Configuration
 import android.os.*
 import android.preference.PreferenceManager
 import android.util.Log
+import androidx.lifecycle.MutableLiveData
 import com.example.dops_location_app.MainActivity
 import com.example.dops_location_app.R
+import com.example.dops_location_app.model.LocationResponse
 
 
 class LocationService : Service() {
@@ -38,6 +40,8 @@ class LocationService : Service() {
         }
     }
 
+    val lastLocation = MutableLiveData<LocationResponse>()
+
     private val mBinder = LocalBinder()
     private var mLocation: Location? = null
     private var mChangingConfiguration = false
@@ -45,7 +49,7 @@ class LocationService : Service() {
     private var mLocationCallback: LocationCallback? = null
     private var mNotificationManager: NotificationManager? = null
     private val locationRequest = LocationRequest.create()?.apply {
-        interval = 30 * 1000
+        interval = 1 * 1000
         fastestInterval = 30 * 1000
         // smallestDisplacement = 100f // Set the minimum displacement between location updates in meters
         priority = LocationRequest.PRIORITY_HIGH_ACCURACY
@@ -183,6 +187,9 @@ class LocationService : Service() {
         intent.putExtra(EXTRA_LOCATION, location)
         LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
 
+        //Notify with LiveData
+        lastLocation.value = LocationResponse(location.latitude.toFloat(), location.longitude.toFloat(), 0.0)
+
         // Update notification content if running as a foreground service.
         if (serviceIsRunningInForeground(this)) {
             mNotificationManager?.notify(NOTIFICATION_ID, getNotification())
@@ -227,7 +234,7 @@ class LocationService : Service() {
             mNotificationManager!!.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
-                    "MyChanelName",
+                    "Location Updates Channel",
                     NotificationManager.IMPORTANCE_HIGH
                 )
             )
